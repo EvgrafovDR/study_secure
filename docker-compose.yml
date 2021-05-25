@@ -1,0 +1,36 @@
+version: '3.9'
+services:
+  secure_app:
+    image: zvonobot/test_secure
+    container_name: secure_app
+    ports:
+      - 8084:80
+    env_file:
+      - ./app.env
+    volumes:
+      - /var/app_log:/var/log/nginx
+
+  my_waf:
+    image: diarb/my-modsec
+    container_name: waf
+    ports:
+      - 80:80
+    env_file:
+      - ./waf.env
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:7.4.0
+    container_name: filebeat
+    command: filebeat -e -strict.perms=false
+    volumes:
+      - /var/app_log/:/var/log/monitor/:ro
+      - ./filebeat.yml:/usr/share/filebeat/filebeat.yml
+    networks:
+      - elastic
+    env_file:
+      - ./filebeat.env
+
+networks:
+  elastic:
+    driver: bridge
+
